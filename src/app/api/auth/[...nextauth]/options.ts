@@ -9,7 +9,7 @@ export const authOptions: NextAuthOptions = {
         CredentialsProvider({
             id: "credentials",
             name: "credentials",
-
+ 
             credentials: {
                 email: { label: "Email", type: "text"},
                 password: { label: "Password", type: "password"}
@@ -20,7 +20,7 @@ export const authOptions: NextAuthOptions = {
                     const user = await UserModel.findOne({
                         $or: [
                             {email: credentials.identifier},
-                            {username: credentials.identifier} 
+                            {username: credentials.identifier}   
                         ]
                     })
                     if (!user) {
@@ -40,5 +40,32 @@ export const authOptions: NextAuthOptions = {
                 }
             }
         })
-    ]
+    ],
+    callbacks: {
+        async jwt({ token, user }) {
+            if (user) {
+                token._id = user._id?.toString()
+                token.isVerified = user.isVerified;
+                token.isAcceptingMessages = user.isAcceptingMessages;
+                token.username = user.username
+            }
+            return token
+        },
+        async session({ session, token }) {
+            if (token) {
+                session.user._id = token._id
+                session.user.isVerified = token.isVerified 
+                session.user.isAcceptingMessages = token.isAcceptingMessages
+                session.user.username = token.username
+            }
+            return session
+        },
+    },
+    pages: {
+        signIn: '/sign-up'
+    },
+    session: {
+        strategy: "jwt"
+    },
+    secret: process.env.NEXTAUTH_SECRET,
 }
